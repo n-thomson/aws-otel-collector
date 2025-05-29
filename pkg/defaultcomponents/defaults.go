@@ -13,6 +13,7 @@
  * permissions and limitations under the License.
  */
 
+
 package defaultcomponents // import "aws-observability.io/collector/defaultcomponents
 
 import (
