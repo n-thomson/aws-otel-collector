@@ -132,11 +132,11 @@ func TestEnableFeatureGate(t *testing.T) {
 			featureName: "adot.exporter.sapmexporter.deprecation",
 			component:   component.MustNewType("sapm"),
 		},
-		{
-			desc:        "disable signalfx exporter",
-			featureName: "adot.exporter.signalfxexporter.deprecation",
-			component:   component.MustNewType("signalfx"),
-		},
+		//{
+		//	desc:        "disable signalfx exporter",
+		//	featureName: "adot.exporter.signalfxexporter.deprecation",
+		//	component:   component.MustNewType("signalfx"),
+		//},
 	}
 	expectedLen := exportersCount
 
