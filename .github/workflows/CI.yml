@@ -13,19 +13,20 @@
 
 name: C/I
 on:
-  push:
-    branches:
-      - main
-      - release/v*
-      - dev
-      - test/*
-    paths-ignore:
-      - '.github/**'
-      - '!.github/config/testcases.json'
-      - '!.github/workflows/CI.yml'
-      - '!.github/workflows/CI-Operator.yml'
-      - '**.md'
-      - 'tools/workflow/**'
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
+  #     - release/v*
+  #     - dev
+  #     - test/*
+  #   paths-ignore:
+  #     - '.github/**'
+  #     - '!.github/config/testcases.json'
+  #     - '!.github/workflows/CI.yml'
+  #     - '!.github/workflows/CI-Operator.yml'
+  #     - '**.md'
+  #     - 'tools/workflow/**'
 
   # from collector and contrib repo
   repository_dispatch:
