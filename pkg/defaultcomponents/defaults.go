@@ -86,9 +86,9 @@ var sapmExporterFeatureGateDeprecation = featuregate.GlobalRegistry().MustRegist
 	featuregate.StageAlpha,
 	featuregate.WithRegisterDescription("Removes the SAPM Exporter from the set of configurable exporters"))
 
-var signalfxExporterFeatureGateDeprecation = featuregate.GlobalRegistry().MustRegister("adot.exporter.signalfxexporter.deprecation",
-	featuregate.StageAlpha,
-	featuregate.WithRegisterDescription("Removes the SignalFx Metrics Exporter from the set of configurable exporters"))
+// var signalfxExporterFeatureGateDeprecation = featuregate.GlobalRegistry().MustRegister("adot.exporter.signalfxexporter.deprecation",
+// 	featuregate.StageAlpha,
+// 	featuregate.WithRegisterDescription("Removes the SignalFx Metrics Exporter from the set of configurable exporters"))
 
 // Components register OTel components for ADOT-collector distribution
 func Components() (otelcol.Factories, error) {
@@ -158,6 +158,7 @@ func Components() (otelcol.Factories, error) {
 		prometheusexporter.NewFactory(),
 		fileexporter.NewFactory(),
 		kafkaexporter.NewFactory(),
+		signalfxexporter.NewFactory(),
 		debugexporter.NewFactory(),
 		otlpexporter.NewFactory(),
 		otlphttpexporter.NewFactory(),
@@ -174,9 +175,9 @@ func Components() (otelcol.Factories, error) {
 	if !sapmExporterFeatureGateDeprecation.IsEnabled() {
 		exporterList = append(exporterList, sapmexporter.NewFactory())
 	}
-	if !signalfxExporterFeatureGateDeprecation.IsEnabled() {
-		exporterList = append(exporterList, signalfxexporter.NewFactory())
-	}
+	// if !signalfxExporterFeatureGateDeprecation.IsEnabled() {
+	// 	exporterList = append(exporterList, signalfxexporter.NewFactory())
+	// }
 
 	exporters, err := otelcol.MakeFactoryMap[exporter.Factory](exporterList...)
 
