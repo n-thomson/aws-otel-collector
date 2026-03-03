@@ -315,7 +315,7 @@ jobs:
         if: steps.cached_rpms.outputs.cache-hit != 'true'
         run: |
           ARCH=x86_64 SOURCE_ARCH=amd64 DEST=$PACKAGING_ROOT/linux/amd64 tools/packaging/linux/create_rpm.sh
-          ARCH=aarch64 SOURCE_ARCH=arm64 DEST=$PACKAGING_ROOT/linux/arm64 tools/packaging/linux/create_rpm.sh
+          # ARCH=aarch64 SOURCE_ARCH=arm64 DEST=$PACKAGING_ROOT/linux/arm64 tools/packaging/linux/create_rpm.sh
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
