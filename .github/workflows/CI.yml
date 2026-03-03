@@ -24,7 +24,7 @@ on:
       - '!.github/config/testcases.json'
       - '!.github/workflows/CI.yml'
       - '!.github/workflows/CI-Operator.yml'
-      - '**.md'
+      # - '**.md'
       - 'tools/workflow/**'
 
   # from collector and collector-contrib repo
