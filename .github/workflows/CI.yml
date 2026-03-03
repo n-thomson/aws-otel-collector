@@ -424,7 +424,8 @@ jobs:
 
   packaging-ssm:
     runs-on: ubuntu-22.04
-    needs: [packaging-rpm, packaging-deb, packaging-msi]
+    needs: [packaging-rpm]
+    # needs: [packaging-rpm, packaging-deb, packaging-msi]
     steps:
       # Build and archive SSM package into cache.
       - uses: actions/checkout@v4
@@ -443,12 +444,12 @@ jobs:
           key: "cached_rpms_${{ github.run_id }}"
           path: "${{ env.PACKAGING_ROOT }}"
 
-      - name: Restore cached debs
-        if: steps.cached_ssm.outputs.cache-hit != 'true'
-        uses: actions/cache@v3
-        with:
-          key: "cached_debs_${{ github.run_id }}"
-          path: "${{ env.PACKAGING_ROOT }}"
+      # - name: Restore cached debs
+      #   if: steps.cached_ssm.outputs.cache-hit != 'true'
+      #   uses: actions/cache@v3
+      #   with:
+      #     key: "cached_debs_${{ github.run_id }}"
+      #     path: "${{ env.PACKAGING_ROOT }}"
 
       - name: Download built artifacts
         if: steps.cached_ssm.outputs.cache-hit != 'true'
@@ -468,7 +469,8 @@ jobs:
           python3 tools/ssm/ssm_manifest.py ${ssm_pkg_version}
   e2etest-preparation:
     runs-on: ubuntu-22.04
-    needs: [packaging-rpm, packaging-deb, packaging-msi, packaging-ssm]
+    needs: [packaging-rpm]
+    # needs: [packaging-rpm, packaging-deb, packaging-msi, packaging-ssm]
     outputs:
       version: ${{ steps.versioning.outputs.version }}
     steps:
