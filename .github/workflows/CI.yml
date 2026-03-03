@@ -213,79 +213,79 @@ jobs:
         path: build
         retention-days: 1
 
-  packaging-msi:
-    needs: build
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
+  # packaging-msi:
+  #   needs: build
+  #   runs-on: windows-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Download built artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: binary_artifacts
-          path: build
+  #     - name: Download built artifacts
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: binary_artifacts
+  #         path: build
 
-      - name: Display structure of downloaded files
-        run: ls -R
+  #     - name: Display structure of downloaded files
+  #       run: ls -R
 
-      - name: Create msi file using candle and light
-        run: .\tools\packaging\windows\create_msi.ps1
+  #     - name: Create msi file using candle and light
+  #       run: .\tools\packaging\windows\create_msi.ps1
 
-      - name: Install AWS Cli v2
-        run: |
-          msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
-          cmd /c where aws
-          [System.Environment]::SetEnvironmentVariable('Path',$Env:Path + ";C:\\Program Files\\Amazon\\AWSCLIV2\\aws.exe",'User')
-          aws --version
+  #     - name: Install AWS Cli v2
+  #       run: |
+  #         msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
+  #         cmd /c where aws
+  #         [System.Environment]::SetEnvironmentVariable('Path',$Env:Path + ";C:\\Program Files\\Amazon\\AWSCLIV2\\aws.exe",'User')
+  #         aws --version
 
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.COLLECTOR_PROD_PKG_SIGNER_ROLE_ARN }}
-          aws-region: us-west-2
+  #     - uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         role-to-assume: ${{ secrets.COLLECTOR_PROD_PKG_SIGNER_ROLE_ARN }}
+  #         aws-region: us-west-2
 
-      - name: Sign windows artifacts
-        run: |
-          $pkgfile = "build\packages\windows\amd64\aws-otel-collector.msi"
-          $hashobj = Get-FileHash -Algorithm sha256 $pkgfile
-          $hash = $hashobj.Hash
-          $create_date = Get-Date -format s
-          aws s3api put-object "--body" $pkgfile "--bucket" ${{ env.WIN_UNSIGNED_PKG_BUCKET }} "--key" ${{ env.WIN_UNSIGNED_PKG_FOLDER }}/aws-otel-collector-$hash.msi
-          $objkey = ""
-          for ($num = 1 ; $num -le 10 ; $num++) { # 60 * 10 = 600s = 10min timeout
-             Start-Sleep -s 90
-             Write-Output "Poll number $num"
-             msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
-             cmd /c where aws
-             [System.Environment]::SetEnvironmentVariable('Path',$Env:Path + ";C:\\Program Files\\Amazon\\AWSCLIV2\\aws.exe",'User')
-             aws --version
-             $objkey = aws s3api list-objects "--bucket" ${{ env.WIN_SIGNED_PKG_BUCKET }} "--prefix" ${{ env.WIN_SIGNED_PKG_FOLDER }}/aws-otel-collector-$hash.msi "--output" text "--query" "Contents[?LastModified>'$create_date'].Key|[0]"
-             if ($objkey -ne "None") {
-               Write-Output "Found: $objkey"
-               break
-             } else {
-               Write-Output "$objkey returned, obj not available yet, try again later"
-             }
-          }
-          if ($objkey -eq "None") {
-            Throw "Could not find the signed artifact"
-          }
-          aws s3api get-object "--bucket" ${{ env.WIN_SIGNED_PKG_BUCKET }} "--key" $objkey $pkgfile
+  #     - name: Sign windows artifacts
+  #       run: |
+  #         $pkgfile = "build\packages\windows\amd64\aws-otel-collector.msi"
+  #         $hashobj = Get-FileHash -Algorithm sha256 $pkgfile
+  #         $hash = $hashobj.Hash
+  #         $create_date = Get-Date -format s
+  #         aws s3api put-object "--body" $pkgfile "--bucket" ${{ env.WIN_UNSIGNED_PKG_BUCKET }} "--key" ${{ env.WIN_UNSIGNED_PKG_FOLDER }}/aws-otel-collector-$hash.msi
+  #         $objkey = ""
+  #         for ($num = 1 ; $num -le 10 ; $num++) { # 60 * 10 = 600s = 10min timeout
+  #            Start-Sleep -s 90
+  #            Write-Output "Poll number $num"
+  #            msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
+  #            cmd /c where aws
+  #            [System.Environment]::SetEnvironmentVariable('Path',$Env:Path + ";C:\\Program Files\\Amazon\\AWSCLIV2\\aws.exe",'User')
+  #            aws --version
+  #            $objkey = aws s3api list-objects "--bucket" ${{ env.WIN_SIGNED_PKG_BUCKET }} "--prefix" ${{ env.WIN_SIGNED_PKG_FOLDER }}/aws-otel-collector-$hash.msi "--output" text "--query" "Contents[?LastModified>'$create_date'].Key|[0]"
+  #            if ($objkey -ne "None") {
+  #              Write-Output "Found: $objkey"
+  #              break
+  #            } else {
+  #              Write-Output "$objkey returned, obj not available yet, try again later"
+  #            }
+  #         }
+  #         if ($objkey -eq "None") {
+  #           Throw "Could not find the signed artifact"
+  #         }
+  #         aws s3api get-object "--bucket" ${{ env.WIN_SIGNED_PKG_BUCKET }} "--key" $objkey $pkgfile
 
-      - name: Verify package signature
-        run: |
-          $pkgfile = "build\packages\windows\amd64\aws-otel-collector.msi"
-          $sig = Get-AuthenticodeSignature $pkgfile
-          $status = $sig.Status
-          if ($status -ne "Valid") {
-            Throw "Invalid signature found: $status"
-          }
-          Write-Output "Valid signature found from the package"
-      - name: Upload the msi
-        uses: actions/upload-artifact@v4
-        with:
-          name: msi_artifacts
-          path: "${{ env.PACKAGING_ROOT }}"
-          retention-days: 1
+  #     - name: Verify package signature
+  #       run: |
+  #         $pkgfile = "build\packages\windows\amd64\aws-otel-collector.msi"
+  #         $sig = Get-AuthenticodeSignature $pkgfile
+  #         $status = $sig.Status
+  #         if ($status -ne "Valid") {
+  #           Throw "Invalid signature found: $status"
+  #         }
+  #         Write-Output "Valid signature found from the package"
+  #     - name: Upload the msi
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: msi_artifacts
+  #         path: "${{ env.PACKAGING_ROOT }}"
+  #         retention-days: 1
 
   packaging-rpm:
     runs-on: ubuntu-22.04
@@ -347,60 +347,60 @@ jobs:
         run: |
           gpg --fingerprint --with-colons aws-otel-collector@amazon.com grep "^fpr" | sed -n 's/^fpr:::::::::\([[:alnum:]]\+\):/\1/p' | xargs gpg --batch --yes --delete-secret-keys
           gpg --list-secret-keys
-  packaging-deb:
-    runs-on: ubuntu-22.04
-    needs: build
-    steps:
-      # Build and archive debs into cache.
-      - uses: actions/checkout@v4
+  # packaging-deb:
+  #   runs-on: ubuntu-22.04
+  #   needs: build
+  #   steps:
+  #     # Build and archive debs into cache.
+  #     - uses: actions/checkout@v4
 
-      - name: Cache Debs
-        id: cached_debs
-        uses: actions/cache@v3
-        with:
-          key: "cached_debs_${{ github.run_id }}"
-          path: ${{ env.PACKAGING_ROOT }}
+  #     - name: Cache Debs
+  #       id: cached_debs
+  #       uses: actions/cache@v3
+  #       with:
+  #         key: "cached_debs_${{ github.run_id }}"
+  #         path: ${{ env.PACKAGING_ROOT }}
 
-      - name: restore cached binaries
-        if: steps.cached_debs.outputs.cache-hit != 'true'
-        uses: actions/cache@v3
-        with:
-          key: "cached_binaries_${{ github.run_id }}"
-          path: build
+  #     - name: restore cached binaries
+  #       if: steps.cached_debs.outputs.cache-hit != 'true'
+  #       uses: actions/cache@v3
+  #       with:
+  #         key: "cached_binaries_${{ github.run_id }}"
+  #         path: build
 
-      - name: Build Debs
-        if: steps.cached_debs.outputs.cache-hit != 'true'
-        run: |
-          ARCH=amd64 DEST=$PACKAGING_ROOT/debian/amd64 tools/packaging/debian/create_deb.sh
-          ARCH=arm64 DEST=$PACKAGING_ROOT/debian/arm64 tools/packaging/debian/create_deb.sh
+  #     - name: Build Debs
+  #       if: steps.cached_debs.outputs.cache-hit != 'true'
+  #       run: |
+  #         ARCH=amd64 DEST=$PACKAGING_ROOT/debian/amd64 tools/packaging/debian/create_deb.sh
+  #         ARCH=arm64 DEST=$PACKAGING_ROOT/debian/arm64 tools/packaging/debian/create_deb.sh
 
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.COLLECTOR_PROD_PKG_SIGNER_ROLE_ARN }}
-          aws-region: us-west-2
+  #     - uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         role-to-assume: ${{ secrets.COLLECTOR_PROD_PKG_SIGNER_ROLE_ARN }}
+  #         aws-region: us-west-2
 
-      - name: Download Package Signing GPG key
-        if: steps.cached_debs.outputs.cache-hit != 'true'
-        run: |
-          aws secretsmanager get-secret-value --region us-west-2 --secret-id "$PKG_SIGN_PRIVATE_KEY_NAME" | jq -r ".SecretString" > pkg_sign_private.key
-          md5sum pkg_sign_private.key
+  #     - name: Download Package Signing GPG key
+  #       if: steps.cached_debs.outputs.cache-hit != 'true'
+  #       run: |
+  #         aws secretsmanager get-secret-value --region us-west-2 --secret-id "$PKG_SIGN_PRIVATE_KEY_NAME" | jq -r ".SecretString" > pkg_sign_private.key
+  #         md5sum pkg_sign_private.key
 
-      - name: Import Package Signing GPG Key
-        if: steps.cached_debs.outputs.cache-hit != 'true'
-        run: |
-          gpg --import pkg_sign_private.key
-          gpg --list-secret-keys
-          shred -fuvz pkg_sign_private.key
-      - name: Sign DEB Pakcage
-        if: steps.cached_debs.outputs.cache-hit != 'true'
-        run: |
-          sudo apt install -y dpkg-sig
-          dpkg-sig --sign origin -k "aws-otel-collector@amazon.com" $PACKAGING_ROOT/debian/*/*.deb
-      - name: Remove Package Signing GPG Key from local GPG Key Ring
-        if: steps.cached_debs.outputs.cache-hit != 'true'
-        run: |
-          gpg --fingerprint --with-colons aws-otel-collector@amazon.com grep "^fpr" | sed -n 's/^fpr:::::::::\([[:alnum:]]\+\):/\1/p' | xargs gpg --batch --yes --delete-secret-keys
-          gpg --list-secret-keys
+  #     - name: Import Package Signing GPG Key
+  #       if: steps.cached_debs.outputs.cache-hit != 'true'
+  #       run: |
+  #         gpg --import pkg_sign_private.key
+  #         gpg --list-secret-keys
+  #         shred -fuvz pkg_sign_private.key
+  #     - name: Sign DEB Pakcage
+  #       if: steps.cached_debs.outputs.cache-hit != 'true'
+  #       run: |
+  #         sudo apt install -y dpkg-sig
+  #         dpkg-sig --sign origin -k "aws-otel-collector@amazon.com" $PACKAGING_ROOT/debian/*/*.deb
+  #     - name: Remove Package Signing GPG Key from local GPG Key Ring
+  #       if: steps.cached_debs.outputs.cache-hit != 'true'
+  #       run: |
+  #         gpg --fingerprint --with-colons aws-otel-collector@amazon.com grep "^fpr" | sed -n 's/^fpr:::::::::\([[:alnum:]]\+\):/\1/p' | xargs gpg --batch --yes --delete-secret-keys
+  #         gpg --list-secret-keys
 
   test-control-stript:
     runs-on: ubuntu-22.04
